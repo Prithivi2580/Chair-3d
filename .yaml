@@ -1,0 +1,931 @@
+# // import { slides } from "./animation";
+# import { ScrollTrigger } from "gsap/ScrollTrigger";
+# import Lenis from "lenis";
+# import gsap from "gsap";
+# import * as THREE from "three";
+
+#  const slides = [
+#   {
+#     title: "Neon",
+#     id: "jdfu",
+#   },
+#   {
+#     title: "Vroe",
+#     id: "jdfg",
+#   },
+#   {
+#     title: "Njfh",
+#     id: "yejh",
+#   },
+#   {
+#     title: "Dhdf",
+#     id: "tevd",
+#   },
+#   {
+#     title: "Kdge",
+#     id: "whdk",
+#   },
+#   {
+#     title: "Hjdg",
+#     id: "hdke",
+#   },
+#   {
+#     title: "Udvb",
+#     id: "dlfk",
+#   },
+#   {
+#     title: "Fegs",
+#     id: "jdfh",
+#   },
+#   {
+#     title: "Dfeg",
+#     id: "jddf",
+#   },
+#   {
+#     title: "Cfsf",
+#     id: "rkrj",
+#   },
+# ];
+
+# console.log(slides);
+# console.log(slides.title);
+
+
+
+
+# gsap.registerPlugin(ScrollTrigger);
+# const lenis = new Lenis();
+# lenis.on("scroll", ScrollTrigger.update);
+# gsap.ticker.add((time) => {
+#   lenis.raf(time * 1000);
+# });
+# gsap.ticker.lagSmoothing(0);
+
+# const scene = new THREE.Scene();
+
+# const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+# const renderer = new THREE.WebGLRenderer({ antialias: true });
+# renderer.setSize(window.innerWidth, window.innerHeight);
+# renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+# document.body.appendChild(renderer.domElement);
+
+# const geometry = new THREE.PlaneGeometry(2, 2);
+# const uniforms = {
+#   iTime: { value: 0 },
+#   iResolution: {
+#     value: new THREE.Vector2(window.innerWidth, window.innerHeight),
+#   },
+#   scrollOffset: { value: 0 },
+# };
+# const vertexShader = `
+# void main(){
+#  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+# }
+# `;
+
+# const fragmentShader = `
+# uniform vec2 iResolution;
+# uniform float iTime;
+# uniform float scrollOffset;
+
+# void mainImage(out vec4 o, vec2 I){
+# I -= o.zw = iResolution.xy / 2.0 ;
+# float t= iTime * 5.0  + scrollOffset * 200.0;
+# float pattern= sin(atan(I.y, I.x) / 0.1) * sin(20.0 * (o.w /= length(I)) + t) -1.0 + o.w;
+# float monochrome= 1.0 - pattern * 0.5;
+# float invertMonochrome= 1.0 - monochrome;
+# o= vec4(invertMonochrome, invertMonochrome, invertMonochrome,1.0);
+# }
+
+# void main(){
+# mainImage(gl_FragColor,gl_FragCoord.xy);
+# }
+# `;
+# const material = new THREE.ShaderMaterial({
+#   uniforms,
+#   vertexShader,
+#   fragmentShader,
+# });
+
+# const mesh = new THREE.Mesh(geometry, material);
+# scene.add(mesh);
+
+# let lastTime = 0;
+# function animateTunnel(time) {
+#   const deltaTime = time - lastTime;
+#   lastTime = time;
+#   uniforms.iTime.value += deltaTime * 0.001;
+#   renderer.render(scene, camera);
+#   requestAnimationFrame(animateTunnel);
+# }
+# animateTunnel(0);
+
+# window.addEventListener("resize", () => {
+#   const width = window.innerWidth;
+#   const height = window.innerHeight;
+#   renderer.setSize(width, height);
+#   uniforms.iResolution.value.set(width, height);
+# });
+
+# const totalSlide = 10;
+# const zStep = 2500;
+# const initialZ = -22500;
+
+
+# function generateSlides() {
+#   const slider = document.querySelector(".slider");
+  
+  
+#   slider.innerHTML = "";
+
+#   for (let i = 0; i <= totalSlide; i++) {
+#     const slide = document.createElement("div");
+#     slide.className = "slide";
+#     slide.id = `slide-${i}`;
+
+#     const slideImg = document.createElement("div");
+#     slideImg.className = "slide-img";
+
+#     const slideCopy = document.createElement("div");
+#     slideCopy.className = "slide-copy";
+#     slideCopy.innerHTML = `<p>${slides[i - 1].title}</p><p>${
+#       slides[i - 1].id
+#     }</p>`;
+#     slide.appendChild(slideImg);
+#     slide.appendChild(slideCopy);
+#     slider.appendChild(slide);
+
+#     const zPosition = initialZ + (i - 1) * zStep;
+#     const xPosition = i % 2 === 0 ? "30%" : "70%";
+#     const opacity = totalSlide ? 1 : i === totalSlide - 1 ? 0 : 0;
+
+#     gsap.set(slide, {
+#       top: "50",
+#       left: xPosition,
+#       xPercent: -50,
+#       yPercent: -50,
+#       z: zPosition,
+#       opacity: opacity,
+#     });
+#   }
+# }
+
+# window.addEventListener("load", function () {
+#   generateSlides();
+# });
+
+
+
+
+# import * as THREE from "three";
+# import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+
+# let camera, renderer, scene, light, mesh, material, geometry;
+
+# init();
+# animate();
+
+# function init() {
+#   // Camera setup
+#   camera = new THREE.PerspectiveCamera(
+#     75,
+#     window.innerWidth / window.innerHeight,
+#     0.1,
+#     100
+#   );
+#   camera.position.z = 3;
+
+#   // Scene setup
+#   scene = new THREE.Scene();
+
+#   // Lighting setup
+#   light = new THREE.AmbientLight(0xffffff, 1);
+#   scene.add(light);
+
+#   const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+#   directionalLight.position.set(1, 1, 1);
+#   scene.add(directionalLight);
+
+#   // Renderer setup
+#   renderer = new THREE.WebGLRenderer({ antialias: true });
+#   renderer.setSize(window.innerWidth, window.innerHeight);
+#   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+#   document.body.appendChild(renderer.domElement);
+
+#   // OrbitControls setup
+#   const controls = new OrbitControls(camera, renderer.domElement);
+#   controls.update();
+
+#   // Shaders
+#   const vertexShader = `
+#     varying vec2 vUv;
+#     varying vec3 vNormal;
+#     uniform float uTime;
+#     void main() {
+#       vUv = uv;
+#       vNormal= normal;
+#       vec3 pos= position;
+#       float displacement= sin(pos.x * 5.0 + uTime) * 0.1 + sin(pos.y * 5.0 + uTime) * 0.1 + sin(pos.z * 5.0 + uTime) * 0.1;
+#       pos += normal * displacement;
+#       gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+#     }
+#   `;
+
+#   const fragmentShader = `
+#     varying vec2 vUv;
+#     varying vec3 vNormal;
+#     uniform float uTime;
+#     void main() {
+#     vec3 color= vec3(0.5) + 0.5 * cos(vUv.xyx + uTime + vec3(0,2,4));
+#       gl_FragColor = vec4(color, 1.0);
+#     }
+#   `;
+
+#   // Geometry and material
+#   geometry = new THREE.IcosahedronGeometry(1, 100,100);
+#   material = new THREE.ShaderMaterial({
+#     vertexShader,
+#     fragmentShader,
+#     uniforms: {
+#       uTime: { value: 0 },
+#     },
+#   });
+
+#   // Cube mesh
+#   mesh = new THREE.Mesh(geometry, material);
+#   scene.add(mesh);
+
+#   // Resize event listener
+#   window.addEventListener("resize", resizeWindow);
+# }
+
+# function resizeWindow() {
+#   camera.aspect = window.innerWidth / window.innerHeight;
+#   camera.updateProjectionMatrix();
+#   renderer.setSize(window.innerWidth, window.innerHeight);
+# }
+
+# function animate() {
+#   requestAnimationFrame(animate);
+#   render();
+# }
+
+# function render() {
+#   mesh.rotation.x += 0.005;
+#   mesh.rotation.y += 0.005;
+#   material.uniforms.uTime.value += 0.005;
+
+#   renderer.render(scene, camera);
+# }
+
+
+
+
+
+
+# import * as THREE from "three";
+# import { RoundedBoxGeometry } from "three/examples/jsm/Addons.js";
+# import { OrbitControls } from "three/examples/jsm/Addons.js";
+
+# const scene = new THREE.Scene();
+
+# const size = 15;
+
+# const camera = new THREE.OrthographicCamera(-size, size, size, -size, 0.1, 1000);
+# camera.position.set(10, 30, 10); // Move the camera closer
+# camera.lookAt(0, 0, 0);
+
+# const renderer = new THREE.WebGLRenderer({ antialias: true });
+# renderer.setSize(window.innerWidth, window.innerHeight);
+# renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+# document.body.appendChild(renderer.domElement);
+
+# const controls = new OrbitControls(camera, renderer.domElement);
+
+# const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+# scene.add(ambientLight);
+
+
+# const directionalLight = new THREE.DirectionalLight(0xffffff, 2); // Increase light intensity
+# directionalLight.position.set(5, 5, 5);
+# scene.add(directionalLight);
+
+# const geometry = new RoundedBoxGeometry(0.5, 1, 0.5, 5);
+# const material = new THREE.MeshPhongMaterial({ color: 0x0000ff });
+# const instances = size ** 2;
+# const instanceMesh = new THREE.InstancedMesh(geometry, material, instances);
+
+# let dummy = new THREE.Object3D();
+# const waveSpeed = 0.001;  // Adjust speed of the wave
+# const waveHeight = 1.5;   // Adjust height of the wave
+# const waveFrequency = 1; 
+
+# for (let i = 0; i < size; i++) {
+#   for (let j = 0; j < size; j++) {
+#     dummy.position.set(i - size / 2, 0, j - size / 2);
+#     dummy.updateMatrix();
+#     instanceMesh.setMatrixAt(i * size + j, dummy.matrix);
+#   }
+# }
+
+# scene.add(instanceMesh);
+
+# function animate(time) {
+#   requestAnimationFrame(animate);
+
+#   for (let i = 0; i < size; i++) {
+#     for (let j = 0; j < size; j++) {
+#       const index = i * size + j;
+
+#       // Calculate wave height based on sine function
+#       const y = waveHeight * Math.sin(time * waveSpeed + (i + j) * waveFrequency * 0.2);
+
+#       // Create a dummy object to update position
+#       dummy.position.set(i - size / 2, y, j - size / 2);
+#       dummy.updateMatrix();
+
+#       // Update instance matrix to reflect the wave motion
+#       instanceMesh.setMatrixAt(index, dummy.matrix);
+#     }
+#   }
+
+#   // Required when dynamically updating instanced mesh matrices
+#   instanceMesh.instanceMatrix.needsUpdate = true;
+
+#   controls.update();
+#   renderer.render(scene, camera);
+# }
+
+# animate();
+
+
+
+# import * as THREE from "three";
+# import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+# import { RoundedBoxGeometry } from "three/examples/jsm/Addons.js";
+
+
+# const scene = new THREE.Scene();
+# const size = 30;
+# const spacing = 0.4987;
+
+# // Camera setup
+# const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
+# camera.position.set(0, 5, 1);
+# camera.lookAt(0, 0, 0);
+# scene.add(camera);
+
+# // Renderer setup
+# const renderer = new THREE.WebGLRenderer({ antialias: true });
+# renderer.setSize(window.innerWidth, window.innerHeight);
+# renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+# document.body.appendChild(renderer.domElement);
+
+# // Lighting setup
+# const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+# scene.add(ambientLight);
+
+# const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+# directionalLight.position.set(5, 5, 5);
+# scene.add(directionalLight);
+
+# // Orbit controls setup
+# const controls = new OrbitControls(camera, renderer.domElement);
+
+# // Geometry and material setup
+# const geometry = new RoundedBoxGeometry(0.45, 0.45, 0.45, 5);
+# const blackMaterial = new THREE.MeshStandardMaterial({ color: 0x0000ff, roughness: 0.5, metalness: 0.5 });
+# const instances = size ** 2;
+# const instancedMesh = new THREE.InstancedMesh(geometry, blackMaterial, instances);
+# scene.add(instancedMesh);
+
+# // Raycaster and mouse setup
+# const raycaster = new THREE.Raycaster();
+# const mouse = new THREE.Vector2();
+# let hoveredInstance = null;
+
+# // Create dummy object to transform each instance
+# const dummy = new THREE.Object3D();
+# for (let i = 0; i < size; i++) {
+#   for (let j = 0; j < size; j++) {
+#     dummy.position.set((i - size / 2) * spacing, 0, (j - size / 2) * spacing);
+#     dummy.updateMatrix();
+#     instancedMesh.setMatrixAt(i * size + j, dummy.matrix);
+#   }
+# }
+
+# // Track mouse movements
+# window.addEventListener("mousemove", (event) => {
+#   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+#   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+# });
+# window.addEventListener("resize", windowResize);
+# function windowResize(){
+#   camera.aspect = window.innerWidth / window.innerHeight;
+#   camera.updateProjectionMatrix();
+#   renderer.setSize(window.innerWidth, window.innerHeight);
+# }
+
+# function checkHover(){
+#   raycaster.setFromCamera(mouse,camera);
+#   const intersects = raycaster.intersectObject(instancedMesh);
+#   if(intersects.length > 0){
+#     if(hoveredInstance !== intersects[0].instanceId){
+#       if(hoveredInstance !== null){
+#         instancedMesh.setColorAt(hoveredInstance, new THREE.Color(0x000000));
+#       }
+#       hoveredInstance = intersects[0].instanceId;
+#       instancedMesh.setColorAt(hoveredInstance, new THREE.Color(0x0000ff));
+#       instancedMesh.instanceColor.needsUpdate = true;
+#     }
+#   } else {
+#     if(hoveredInstance !== null){
+#       instancedMesh.setColorAt(hoveredInstance, new THREE.Color(0x000000));
+#       instancedMesh.instanceColor.needsUpdate = true;
+#       hoveredInstance = null;
+#     }
+#   }
+  
+# }
+
+
+# // Animation loop
+# function animate() {
+#   requestAnimationFrame(animate);
+#   checkHover()
+#   controls.update();
+#   renderer.render(scene, camera);
+# }
+
+# animate();
+
+
+
+
+# import * as THREE from "three";
+# import { OrbitControls } from "three/examples/jsm/Addons.js";
+# import {
+#   MSDFTextGeometry,
+#   MSDFTextMaterial,
+#   uniforms,
+# } from "three-msdf-text-utils";
+# import VirtualScroll from "virtual-scroll";
+# import "./style.css";
+# import fnt from "./font/custom-msdf.json";
+# import atlasURL from "./font/custom.png";
+
+# const TEXTS = [
+#   "Serendipity",
+#   "Ephemeral",
+#   "Euphoria",
+#   "Solitude",
+#   "Luminous",
+#   "Ineffable",
+#   "Mellifluous",
+#   "Resplendent",
+#   "Ethereal",
+#   "Halcyon",
+# ];
+
+# const textureList = [...document.querySelectorAll(".js-texture")];
+# const textures = textureList.map((t) => {
+#   return new THREE.TextureLoader().load(t.src);
+# });
+
+
+# const scene = new THREE.Scene();
+# const group = new THREE.Group();
+# const groupPlane = new THREE.Group();
+# scene.add(group);
+# scene.add(groupPlane);
+
+# const camera = new THREE.PerspectiveCamera(
+#   70,
+#   window.innerWidth / window.innerHeight,
+#   0.01,
+#   100
+# );
+# camera.position.set(0, 0, 2);
+
+# const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+# renderer.setSize(window.innerWidth, window.innerHeight);
+# renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+# document.body.appendChild(renderer.domElement);
+
+# const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+# scene.add(ambientLight);
+
+# // const controls = new OrbitControls(camera, renderer.domElement);
+
+# let position = 0;
+# let speed = 0;
+# let targetSpeed = 0;
+# let material, planeGeometry, planeMaterial, plane,size;
+# const scroller = new VirtualScroll();
+# scroller.on((event) => {
+#   position = event.y / 4000;
+#   speed = event.deltaY / 2000;
+# });
+
+# function addTexts() {
+#   material = new THREE.ShaderMaterial({
+#     side: THREE.DoubleSide,
+#     transparent: true,
+#     defines: {
+#       IS_SMALL: false,
+#     },
+#     extensions: {
+#       derivatives: true,
+#     },
+#     uniforms: {
+#       uSpeed: { value: 0 },
+#       // Common
+#       ...uniforms.common,
+
+#       // Rendering
+#       ...uniforms.rendering,
+
+#       // Strokes
+#       ...uniforms.strokes,
+#     },
+#     vertexShader: `
+#                   // Attribute
+#                   attribute vec2 layoutUv;
+          
+#                   attribute float lineIndex;
+          
+#                   attribute float lineLettersTotal;
+#                   attribute float lineLetterIndex;
+          
+#                   attribute float lineWordsTotal;
+#                   attribute float lineWordIndex;
+          
+#                   attribute float wordIndex;
+          
+#                   attribute float letterIndex;
+          
+#                   // Varyings
+#                   varying vec2 vUv;
+#                   varying vec2 vLayoutUv;
+#                   varying vec3 vViewPosition;
+#                   varying vec3 vNormal;
+          
+#                   varying float vLineIndex;
+          
+#                   varying float vLineLettersTotal;
+#                   varying float vLineLetterIndex;
+          
+#                   varying float vLineWordsTotal;
+#                   varying float vLineWordIndex;
+          
+#                   varying float vWordIndex;
+          
+#                   varying float vLetterIndex;
+
+#                   mat4 rotationMatrix(vec3 axis, float angle) {
+#     axis = normalize(axis);
+#     float s = sin(angle);
+#     float c = cos(angle);
+#     float oc = 1.0 - c;
+    
+#     return mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
+#                 oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
+#                 oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
+#                 0.0,                                0.0,                                0.0,                                1.0);
+# }
+
+# vec3 rotate(vec3 v, vec3 axis, float angle) {
+# 	mat4 m = rotationMatrix(axis, angle);
+# 	return (m * vec4(v, 1.0)).xyz;
+# }
+#     uniform float uSpeed;
+          
+#                   void main() {
+                    
+          
+#                       // Varyings
+#                       vUv = uv;
+#                       vLayoutUv = layoutUv;
+#                       vNormal = normal;
+          
+#                       vLineIndex = lineIndex;
+          
+#                       vLineLettersTotal = lineLettersTotal;
+#                       vLineLetterIndex = lineLetterIndex;
+          
+#                       vLineWordsTotal = lineWordsTotal;
+#                       vLineWordIndex = lineWordIndex;
+          
+#                       vWordIndex = wordIndex;
+          
+#                       vLetterIndex = letterIndex;
+
+#                       // Output
+#                       vec3 newpos= position;
+#                       float xx= position.x * 0.006;
+#                       newpos = rotate(newpos, vec3(0.0, 0.0, 1.0), uSpeed * xx * xx * xx);
+#                       vec4 mvPosition = vec4(newpos, 1.0);
+#                       mvPosition = modelViewMatrix * mvPosition;
+#                       gl_Position = projectionMatrix * mvPosition;
+
+#                       vViewPosition = -mvPosition.xyz;
+#                   }
+#               `,
+#     fragmentShader: `
+#                   // Varyings
+#                   varying vec2 vUv;
+          
+#                   // Uniforms: Common
+#                   uniform float uOpacity;
+#                   uniform float uThreshold;
+#                   uniform float uAlphaTest;
+#                   uniform vec3 uColor;
+#                   uniform sampler2D uMap;
+          
+#                   // Uniforms: Strokes
+#                   uniform vec3 uStrokeColor;
+#                   uniform float uStrokeOutsetWidth;
+#                   uniform float uStrokeInsetWidth;
+          
+#                   // Utils: Median
+#                   float median(float r, float g, float b) {
+#                       return max(min(r, g), min(max(r, g), b));
+#                   }
+          
+#                   void main() {
+#                       // Common
+#                       // Texture sample
+#                       vec3 s = texture2D(uMap, vUv).rgb;
+          
+#                       // Signed distance
+#                       float sigDist = median(s.r, s.g, s.b) - 0.5;
+          
+#                       float afwidth = 1.4142135623730951 / 2.0;
+          
+#                       #ifdef IS_SMALL
+#                           float alpha = smoothstep(uThreshold - afwidth, uThreshold + afwidth, sigDist);
+#                       #else
+#                           float alpha = clamp(sigDist / fwidth(sigDist) + 0.5, 0.0, 1.0);
+#                       #endif
+          
+#                       // Strokes
+#                       // Outset
+#                       float sigDistOutset = sigDist + uStrokeOutsetWidth * 0.5;
+          
+#                       // Inset
+#                       float sigDistInset = sigDist - uStrokeInsetWidth * 0.5;
+          
+#                       #ifdef IS_SMALL
+#                           float outset = smoothstep(uThreshold - afwidth, uThreshold + afwidth, sigDistOutset);
+#                           float inset = 1.0 - smoothstep(uThreshold - afwidth, uThreshold + afwidth, sigDistInset);
+#                       #else
+#                           float outset = clamp(sigDistOutset / fwidth(sigDistOutset) + 0.5, 0.0, 1.0);
+#                           float inset = 1.0 - clamp(sigDistInset / fwidth(sigDistInset) + 0.5, 0.0, 1.0);
+#                       #endif
+          
+#                       // Border
+#                       float border = outset * inset;
+          
+#                       // Alpha Test
+#                       if (alpha < uAlphaTest) discard;
+          
+#                       // Output: Common
+#                       vec4 filledFragColor = vec4(uColor, uOpacity * alpha);
+          
+#                       // Output: Strokes
+#                       vec4 strokedFragColor = vec4(uStrokeColor, uOpacity * border);
+          
+#                       gl_FragColor = vec4(1.0,0.0,0.0,1);
+#                   }
+#               `,
+#   });
+
+#   Promise.all([loadFontAtlas(atlasURL)]).then(([atlas]) => {
+#      size = 0.36;
+#     material.uniforms.uMap.value = atlas;
+
+#     TEXTS.forEach((text, i) => {
+#       const geometry = new MSDFTextGeometry({
+#         text: text.toUpperCase(),
+#         font: fnt,
+#       });
+
+#       const mesh = new THREE.Mesh(geometry, material);
+#       let s = 0.008;
+#       mesh.scale.set(s, -s, s);
+#       mesh.position.set(-0.9, size * i, 0);
+#       group.add(mesh);
+#     });
+#   });
+
+#   function loadFontAtlas(path) {
+#     const promise = new Promise((resolve, reject) => {
+#       const loader = new THREE.TextureLoader();
+#       loader.load(path, resolve);
+#     });
+
+#     return promise;
+#   }
+# }
+
+# function addObjects() {
+#   planeMaterial = new THREE.ShaderMaterial({
+#     side: THREE.DoubleSide,
+#     uniforms: {
+#       time: { value: 0 },
+#       uTexture: { value: textures[0] },
+#       resolution: { value: new THREE.Vector4() },
+#     },
+#     vertexShader: `
+#     varying vec2 vUv;
+#     void main() {
+#         vUv= uv;
+#         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+#       }
+#     `,
+#     fragmentShader: `
+#     varying vec2 vUv;
+#     uniform sampler2D uTexture;
+#     void main(){
+#     gl_FragColor = texture2D(uTexture, vUv);
+#     }
+#     `,
+#   });
+#   planeGeometry = new THREE.PlaneGeometry(1.77 / 3, 1 / 3, 30, 30).translate(
+#     0,
+#     0,
+#     1
+#   );
+#   let pos = planeGeometry.attributes.position.array;
+#   let newPos = [];
+#   let r = 1.2;
+#   for (let i = 0; i < pos.length; i += 3) {
+#     let x = pos[i];
+#     let y = pos[i + 1];
+#     let z = pos[i + 2];
+
+#     let xz = new THREE.Vector2(x, z).normalize().multiplyScalar(r);
+
+#     newPos.push(xz.x, y, xz.y);
+#   }
+#   planeGeometry.setAttribute(
+#     "position",
+#     new THREE.Float32BufferAttribute(newPos, 3)
+#   );
+#   plane = new THREE.Mesh(planeGeometry, planeMaterial);
+#   groupPlane.add(plane);
+# }
+# function updateTexture(){
+#   let index= Math.round(position + 100000) % textures.length;
+#   planeMaterial.uniforms.uTexture.value = textures[index];
+# }
+# addTexts();
+# addObjects();
+
+# function animate() {
+#   requestAnimationFrame(animate);
+#   //   controls.update();
+#   updateTexture();
+#   speed *= 0.9;
+#   targetSpeed += (speed - targetSpeed) * 0.1;
+#   material.uniforms.uSpeed.value = targetSpeed;
+#   group.position.y = -position*size;
+#   plane.rotation.y = position * 2 *Math.PI;
+#   groupPlane.rotation.z = 0.2*Math.sin(position * 0.5);
+#   renderer.render(scene, camera);
+# }
+# animate();
+
+
+
+
+
+
+
+
+
+
+# import * as THREE from "three";
+# import { OrbitControls } from "three/examples/jsm/Addons.js";
+# import gsap from "gsap";
+
+# const scene = new THREE.Scene();
+
+# const camera = new THREE.PerspectiveCamera(
+#   70,
+#   window.innerWidth / window.innerHeight,
+#   0.001,
+#   1000
+# );
+# camera.position.set(0, 0, 2);
+
+# const dist = camera.position.z;
+# const height = 1;
+# camera.fov = 2 * (180 / Math.PI) * Math.atan(height / (2 * dist));
+# camera.updateProjectionMatrix();
+
+# const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+# scene.add(ambientLight);
+
+# const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+# renderer.setSize(window.innerWidth, window.innerHeight);
+# renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+# document.body.appendChild(renderer.domElement);
+
+# const control = new OrbitControls(camera, renderer.domElement);
+
+# window.addEventListener("resize", function () {
+#   camera.aspect = window.innerWidth / window.innerHeight;
+#   camera.updateProjectionMatrix();
+#   renderer.setSize(window.innerWidth, window.innerHeight);
+#   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+# });
+
+# const textureLoader = new THREE.TextureLoader();
+# const texture = textureLoader.load(
+#   "https://images.unsplash.com/photo-1725961476284-fa0f6dd682a3?w=1920&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDIwNXxDRHd1d1hKQWJFd3x8ZW58MHx8fHx8"
+# );
+
+# const vertexShader = `
+
+# varying vec2 vUv;
+# uniform float progress; 
+# uniform float direction;
+# void main(){
+
+# vec3 pos= position;
+# // pos.z= 0.1 * sin(pos.x*10.0);
+# float distance= length(uv - vec2(0.5));
+# float maxDist= length(vec2(0.5));
+# float normalizedDistance= distance / maxDist;
+# float stickTo= normalizedDistance;
+# float stickOut= -normalizedDistance;
+# float stickEffect= mix(stickTo,stickOut,direction);
+# float superProgress= min(2.*progress,2.*(1. - progress));
+# float zOffset=2.;
+# float zProgress=mix( clamp(2.*progress,0.,1.), clamp(1. - 2.*(1.-progress),0.,1.),direction);
+# pos.z += zOffset*(stickEffect * superProgress - zProgress );
+# vUv=uv;
+# gl_Position= projectionMatrix * modelViewMatrix * vec4(pos,1.0);
+# }
+# `;
+
+# const fragmentShader = `
+
+# uniform sampler2D texture1;
+# uniform vec4 resolution;
+# uniform float progress;
+# varying vec2 vUv;
+# void main(){
+
+# // vec2 newUV= (vUv - vec2(0.5))*resolution.zw + vec2(0.5);
+# vec4 color= texture2D(texture1,vUv);
+# gl_FragColor= vec4(vUv,0.0,1.0);
+# gl_FragColor= color;
+# // gl_FragColor= vec4(progress,0.,0.,1.);
+
+
+# }
+# `;
+
+# const aspect = window.innerWidth / window.innerHeight;
+# const geometry = new THREE.PlaneGeometry(height * aspect, height, 100, 100);
+# const material = new THREE.ShaderMaterial({
+#   vertexShader: vertexShader,
+#   fragmentShader: fragmentShader,
+#   uniforms: {
+#     time: { value: 0 },
+#     texture1: { value: texture },
+#     resolution: { value: new THREE.Vector4() },
+#     progress: { value: 0 },
+#     direction:{value:0}
+#   },
+#   // wireframe: true,
+# });
+# const mesh = new THREE.Mesh(geometry, material);
+# scene.add(mesh);
+
+# document.addEventListener("mousedown", function () {
+#   material.uniforms.direction.value = 0;
+#   gsap.to(material.uniforms.progress, {
+#     value: 1,
+#     duration: 0.5,
+#   });
+# });
+# document.addEventListener("mouseup", function () {
+#   material.uniforms.direction.value = 1;
+#   gsap.to(material.uniforms.progress, {
+#     value: 0,
+#     duration: 0.5,
+#   });
+# });
+
+# function animate() {
+#   control.update();
+#   renderer.render(scene, camera);
+#   requestAnimationFrame(animate);
+# }
+# animate();
+
+
+
